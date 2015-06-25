@@ -12,6 +12,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%% Programmed by DKim & JKung %%%%%%%%%%%%%%%
 
+
 clc;
 clear all;
 
@@ -27,7 +28,7 @@ DRAM                = DRAM_construct(DRAM_type);
 % NETWORK: network struct for information on router network (delay, topology,...)
 NETWORK.num_rows    = 4;
 NETWORK.num_cols    = 4;
-NETWORK.buffer_size = 1;
+NETWORK.buffer_size = 2;
 NETWORK.buffer_arr  = {'C_IN', 'M_IN', 'N_IN', 'E_IN', 'W_IN', 'S_IN', 'C_OUT', 'M_OUT', 'N_OUT', 'E_OUT', 'W_OUT', 'S_OUT'};       % 12 buffers with 'buffer_size'
 ROUTER              = ROUTER_construct();       % ROUTER(router_idx, buffer_idx): data, buf_ptr
 
@@ -35,8 +36,68 @@ NN_type             = 'CNN';
 num_MAC             = 4;    % # of MACs/PE
 PE                  = PE_construct(NN_type, num_MAC);
 
+SRAM                = SRAM_construct();
+
+global CNN;
+CNN.imgWidth    = 8;    CNN.imgHeight   = 8;
+CNN.p_imgWidth  = floor(CNN.imgWidth/NETWORK.num_cols);
+CNN.p_imgHeight = floor(CNN.imgHeight/NETWORK.num_rows);
+CNN.tempWidth   = 3;    CNN.tempHeight  = 3;
 
 
-% simulation setting
-global SIM_TYPE;    SIM_TYPE = 1;     % SIM_TYPE (0: memory request, 1: memory centric)
+%% simulation begin
+global MEM_CENTRIC;    MEM_CENTRIC = 1;
+global packetID;
+global packetHistory;      packetHistory = [];
+
+% (total) numDATA = (locally stored templates) + (cell states + cell offsets)
+numDATA         = NETWORK.num_rows*NETWORK.num_cols*(CNN.tempWidth*CNN.tempHeight) + 2*CNN.imgWidth*CNN.imgHeight;
+
+
+global sim_t;   sim_t = 0;
+time_max = 200;  % for debugging purpose
+fetch_complete  = 0;        % determines whether DRAM fetch is completed
+
+if (MEM_CENTRIC)
+    
+    % data packet generation from DRAM (genPacket kept as a reference)
+    [ genPacket, packetID ] = packetGen(NN_type, DRAM_type, num_MAC);        % generated packet by global address generator in DRAM die (memory-centric)
+    if (length(genPacket) ~= numDATA)
+        error('ENTIRE PACKETS ARE NOT GENERATED! - CHECK packetGen()');
+    end
+    
+    msg = sprintf('\n**Phase1: packet transfer [DRAM->SRAM]\n');      disp(msg);
+%     while (~rcv_complete)     % if SRAM receives entire packets from DRAM
+    while (sim_t < time_max)
+        
+        sim_t = sim_t + 1;
+        
+        % packet: [src, dst, gen_time, packetID, data_type, arr_time]
+        % 1) packet fetched from DRAM at each channel (at the same time)
+        % and fed into ROUTER node (gen_time = gen_time + DRAM latency)
+        popPacket();
+        
+        
+        % 2) packet transfer in each ROUTER node (X_IN(k) -> Y_OUT(k))
+        % {'C_IN', 'M_IN', 'N_IN', 'E_IN', 'W_IN', 'S_IN', 'C_OUT', 'M_OUT', 'N_OUT', 'E_OUT', 'W_OUT', 'S_OUT'}
+        routerPacketTransfer();
+
+        
+        % 3) packet transfer btw ROUTER nodes (Y_OUT(k) -> X_IN(l))
+        routerInterTransfer();
+                
+    end     % END while loop
+
+    msg = sprintf('\n**Phase2: packet transfer [SRAM->PE]\n');      disp(msg);
+    
+    %% TODO: memcentric operation of SRAM-PE
+end
+
+
+
+
+
+
+
+
 
