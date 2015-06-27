@@ -29,7 +29,7 @@ for idx = 1:nROUTER
         col_idx = nCols;
     end
     
-    if (col_idx > ref_col)  % X+ direction
+    if (col_idx > ref_col)      % X+ direction
         dir1 = [dir1, idx];
     elseif (col_idx < ref_col)  % X- direction
         dir2 = [dir2, idx];

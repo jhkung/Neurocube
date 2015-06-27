@@ -12,8 +12,8 @@ if strcmp(DRAM_type, 'DDR3')
     MAX_words       = DRAM_size/word_size;
     num_cols        = page_size/word_size;
     lat_access      = 20;      % DDR3-1600J: t_CAS (10) + t_RCD (10)
-    interc_delay    = 10;
-else
+    interc_delay    = 10;      % interconnection delay
+else    % TODO: add more DRAM specifications (HMC, WideIO, ...)
     error('DRAM TYPE NOT RECOGNIZED!');
 end
 

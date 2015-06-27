@@ -14,9 +14,9 @@ if strcmp(NN_type, 'CNN')   % does PE struct has to be different depending on NN
         
         for mac_idx = 1:num_MAC
             PE(pe_idx,mac_idx).packet       = zeros(1,6);    % [src, dst, gen_time, packetID, data_type, arr_time]
-            PE(pe_idx,mac_idx).op_cnt       = 0;    % counts the number of operands being loaded from SRAM (cache)
+            PE(pe_idx,mac_idx).op_cnt       = 0;    % counts the number of operands being loaded from SRAM (cache) to MAC
             PE(pe_idx,mac_idx).compute_flag = 0;    % when all operands are ready begin computation
-            PE(pe_idx,mac_idx).done         = 0;    % done(1): when computation is done
+            PE(pe_idx,mac_idx).done         = 0;    % done(1): when computation is done -> at the same time, make compute_flag(0)
         end
     end
 else

@@ -86,7 +86,7 @@ for r_idx = 1:nROUTER
                     ROUTER(r_idx,packet_buf).full   = 0;
                 end
                                 
-                msg = sprintf('[sim_t @ %d] Packet{%d}(%d->%d) moved from [%s] to [%s] in ROUTER(%d)...\n', sim_t, packet_list(I,4), packet_list(I,1), packet_dst, src_buf, dst_buf, r_idx);      disp(msg);
+                msg = sprintf('[sim_t @ %d] Packet{%d}(%d->%d) moved from [%s(R%d)] to [%s(R%d)]...\n', sim_t, packet_list(I,4), packet_list(I,1), packet_dst, src_buf, r_idx, dst_buf, r_idx);      disp(msg);
             end
         end
         

@@ -53,8 +53,8 @@ for r_idx = 1:nROUTER
                     ROUTER(dst_r_idx,dst_idx).buf_ptr = ROUTER(dst_r_idx,dst_idx).buf_ptr + 1;
                     ROUTER(dst_r_idx,dst_idx).packet(ROUTER(dst_r_idx,dst_idx).buf_ptr,:) = ROUTER(r_idx,b_idx).packet(1,:);
                     
-                    msg = sprintf('[sim_t @ %d] Packet{%d}(%d->%d) moved from [%s] to [%s] in ROUTER(%d)...\n', ...
-                        sim_t, ROUTER(r_idx,b_idx).packet(1,4), ROUTER(r_idx,b_idx).packet(1,1), ROUTER(r_idx,b_idx).packet(1,2), NETWORK.buffer_arr{b_idx}, NETWORK.buffer_arr{dst_idx}, dst_r_idx);
+                    msg = sprintf('[sim_t @ %d] Packet{%d}(%d->%d) moved from [%s(R%d)] to [%s(R%d)]...\n', ...
+                        sim_t, ROUTER(r_idx,b_idx).packet(1,4), ROUTER(r_idx,b_idx).packet(1,1), ROUTER(r_idx,b_idx).packet(1,2), NETWORK.buffer_arr{b_idx}, r_idx, NETWORK.buffer_arr{dst_idx}, dst_r_idx);
                     disp(msg);
                     
                     ROUTER(dst_r_idx,dst_idx).packet(ROUTER(dst_r_idx,dst_idx).buf_ptr,6) = sim_t;
