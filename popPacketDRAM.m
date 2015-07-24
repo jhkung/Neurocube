@@ -1,13 +1,14 @@
-function [ ] = popPacketDRAM( )
+function [ pop_flag ] = popPacketDRAM( )
 % Fetch packet from DRAM to connected ROUTER node
 % Simply increase 'gen_time' of packet by 't_access + t_interc'
 
 global DRAM;    global ROUTER;  global NETWORK;
 global DRAM_router_node;        global packetHistory;
+global nRead;
 global sim_t;
 
 [M, N]      = size(DRAM_router_node);   % M*N = # channels
-
+pop_flag    = 0;
 
 % packet: [src, dst, gen_time, packetID, data_type]
 % router buffer arr: 'C_IN', 'M_IN', 'N_IN', 'E_IN', 'W_IN', 'S_IN', 'C_OUT', 'M_OUT', 'N_OUT', 'E_OUT', 'W_OUT', 'S_OUT'
@@ -21,16 +22,23 @@ if (~isempty(DRAM(1).packet))
                 DRAM_idx    = (row_idx-1)*N + col_idx;      % DRAM index
                 ROUTER_idx  = DRAM_router_node(row_idx, col_idx);   % ROUTER index
                 
+                DRAM(DRAM_idx).busy = 1;
+                
                 % if router buffer connected to DRAM input is not full -> fetch packet from DRAM
                 buf_idx     = 2;    % DRAM input buffer in each router node
                 
                 if (~ROUTER(ROUTER_idx,buf_idx).full)
+                    
+                    pop_flag(DRAM_idx)    = 1;
                     
                     % update arrival time of data packet depending on DRAM latency
                     ROUTER(ROUTER_idx,buf_idx).packet(ROUTER(ROUTER_idx,buf_idx).buf_ptr+1,:) = [DRAM(DRAM_idx).packet(1,:), DRAM(DRAM_idx).packet(1,3)+DRAM(DRAM_idx).t_access+DRAM(DRAM_idx).t_interc];
                     
                     packetHistory     = [packetHistory; DRAM(DRAM_idx).packet(1,:), DRAM(DRAM_idx).packet(1,3)+DRAM(DRAM_idx).t_access+DRAM(DRAM_idx).t_interc];
                     
+                    if (packetHistory(end,5) == 3)
+                        nRead = nRead + 1;      % number of pixels (cell states) read from DRAM
+                    end
                     
                     DRAM(DRAM_idx).packet   = DRAM(DRAM_idx).packet(2:end,:);       % update packet queue in DRAM
                     ROUTER(ROUTER_idx,buf_idx).buf_ptr = ROUTER(ROUTER_idx,buf_idx).buf_ptr + 1;    % increaes buffer pointer in ROUTER node connected to DRAM channel
@@ -41,6 +49,8 @@ if (~isempty(DRAM(1).packet))
                     
                     %                 packetHistory(DRAM_idx).packet(num_history+1,:)     = ROUTER(ROUTER_idx,buf_idx).packet(ROUTER(ROUTER_idx,buf_idx).buf_ptr,:);
                 else
+                    pop_flag(DRAM_idx)    = 0;
+                    
                     str = sprintf('[sim_t @ %d] DRAM_IN buffer in ROUTER(%d) is full...', sim_t, ROUTER_idx);
                     disp(str);
                     

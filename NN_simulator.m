@@ -39,7 +39,7 @@ PE                  = PE_construct(NN_type, num_MAC);
 SRAM                = SRAM_construct();
 
 global CNN;
-CNN.imgWidth    = 8;    CNN.imgHeight   = 8;
+CNN.imgWidth    = 16;    CNN.imgHeight   = 16;
 CNN.p_imgWidth  = floor(CNN.imgWidth/NETWORK.num_cols);
 CNN.p_imgHeight = floor(CNN.imgHeight/NETWORK.num_rows);
 CNN.tempWidth   = 3;    CNN.tempHeight  = 3;
@@ -48,13 +48,17 @@ CNN.tempWidth   = 3;    CNN.tempHeight  = 3;
 %% simulation begin
 global MEM_CENTRIC;    MEM_CENTRIC = 1;
 global packetID;
-global packetHistory;      packetHistory = [];
+global packetHistory;  packetHistory = [];
+global DRAM_router_node;
+global SRAM_cap;       SRAM_cap    = 0;
 
 % (total) numDATA = (locally stored templates) + (cell states + cell offsets)
 numDATA         = NETWORK.num_rows*NETWORK.num_cols*(CNN.tempWidth*CNN.tempHeight) + 2*CNN.imgWidth*CNN.imgHeight;
 
+global nRead;
 global sim_t;   sim_t = 0;
-time_max = 500;             % for debugging purpose
+time_max = 300;           % for debugging purpose
+nRead    = 0;             % number of data read from DRAM
 rcv_complete  = 0;        % determines whether DRAM fetch is completed
 
 if (MEM_CENTRIC)
@@ -65,17 +69,39 @@ if (MEM_CENTRIC)
         error('ENTIRE PACKETS ARE NOT GENERATED! - CHECK packetGen()');
     end
     
-    msg = sprintf('\n**Phase1: packet transfer [DRAM->SRAM]\n');      disp(msg);
-    while (~rcv_complete)     % if SRAM receives entire packets from DRAM
-%     while (sim_t < time_max)  % DEBUG purpose
+    readDRAM    = 1;        readSRAM    = 0;
+    blk_idx     = 0;        % blk_idx: index for handling data of each SRAM cap
+    nData_to_Read   = 2*numel(image_idx{1})/numel(DRAM);     % # of cell states & offset to be read from each DRAM channel considering SRAM cap
+    nData_per_SRAM  = 2*numel(image_idx{1})/numel(SRAM);     % # of cell states & offset stored in each SRAM
+    
+%     while (~rcv_complete)     % if SRAM receives entire packets from DRAM
+    while (sim_t < time_max)  % DEBUG purpose
         
         sim_t = sim_t + 1;
         
         % packet: [src, dst, gen_time, packetID, data_type, arr_time]
         % 1) packet fetched from DRAM at each channel (at the same time)
         % and fed into ROUTER node (gen_time = gen_time + DRAM latency)
-        popPacketDRAM();
+        if (readDRAM)
+            msg         = sprintf('\n**Phase1: packet transfer [DRAM->SRAM]\n');      disp(msg);
+            [ popFlag ] = popPacketDRAM();
+            
+            if (nRead == nData_to_Read)
+                nRead       = 0;    readDRAM    = 0;
+                blk_idx     = blk_idx + 1;
+            end
+        end
         
+        if (~isempty(packetHistory) && packetHistory(end,4) == SRAM(NETWORK.num_rows*NETWORK.num_cols).packet(end,4))
+            readSRAM = 1;
+        end
+        
+%         if (readSRAM)
+%             msg = sprintf('\n**Phase2: packet transfer [SRAM->PE]\n');      disp(msg);
+%             
+%             % data fetch from SRAM to PE
+% %             fetchDataSRAM();
+%         end
         
         % 2) packet transfer in each ROUTER node (X_IN(k) -> Y_OUT(k))
         % {'C_IN', 'M_IN', 'N_IN', 'E_IN', 'W_IN', 'S_IN', 'C_OUT', 'M_OUT', 'N_OUT', 'E_OUT', 'W_OUT', 'S_OUT'}
@@ -89,11 +115,7 @@ if (MEM_CENTRIC)
             rcv_complete = 1;
         end
     end     % END while loop
-    
-    msg = sprintf('\n**Phase2: packet transfer [SRAM->PE]\n');      disp(msg);
-    
-    % data fetch from SRAM to PE
-    fetchDataSRAM();
+
 end
 
 

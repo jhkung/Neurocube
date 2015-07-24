@@ -9,7 +9,7 @@ field2      = 'packet';         null_data   = zeros(1,6);
 field3      = 'ptr';            cache_ptr   = 0;
 field4      = 'data_cnt';       data_cnt    = 0;        % counts how many data are fed into MACs
 field5      = 'MAC_cnt';        MAC_cnt     = 0;        % counts how # of MACs that has been fed by SRAM (for Round-Robin scheduling)
-field6      = 'capacity';       capacity    = 250;
+field6      = 'capacity';       capacity    = 17;
 
 
 for idx = 1:num_SRAMs
