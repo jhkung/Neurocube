@@ -6,7 +6,7 @@ DRAM_size = 2^30;       % virtual size of DRAM (1GB) per channel
 
 % can add any DRAM_type by setting up the corresponding access latency
 if strcmp(DRAM_type, 'DDR3')
-    num_channels    = 2;
+    num_channels    = 16;
     page_size       = 2^10;    % 1KB page (column size)
     word_size       = 2^2;     % 4B (equivalent to data bus-width)
     MAX_words       = DRAM_size/word_size;

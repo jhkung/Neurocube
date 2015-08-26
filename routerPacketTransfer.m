@@ -26,7 +26,7 @@ for r_idx = 1:nROUTER
     end
     
     if (buf_cnt ~= 0)       % transfer packet if there is any packet stored in input buffers
-        [~,I]       = min(packet_list(:,4)');
+        [~,I]       = min(packet_list(:,4)');       % transfer packet with the lowest packet ID
         packet_dst  = packet_list(I,2);
         packet_buf  = buf_idx_list(I);      % buffer index for a package to be transferred
         src_buf     = NETWORK.buffer_arr{packet_buf};

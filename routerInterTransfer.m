@@ -3,7 +3,8 @@ function [ ] = routerInterTransfer( )
 % TODO(1): consider 'M_OUT' data transfer as well
 
 global NETWORK;     global ROUTER;      global SRAM;
-global sim_t;
+global PE;
+global sim_t;       global stallMAC;
 
 nRows       = NETWORK.num_rows;
 nCols       = NETWORK.num_cols;
@@ -19,7 +20,8 @@ for r_idx = 1:nROUTER
         if (ROUTER(r_idx,b_idx).buf_ptr ~= 0)
             if (b_idx == 7)     % 'C_OUT': move packet to SRAM cache
                 
-                if ( (SRAM(r_idx).ptr < SRAM(r_idx).capacity) && (sim_t >= ROUTER(r_idx,b_idx).packet(1,6)+ROUTER(r_idx).latency) )
+%                 if ( (SRAM(r_idx).ptr < SRAM(r_idx).capacity) && (sim_t >= ROUTER(r_idx,b_idx).packet(1,6)+ROUTER(r_idx).latency) )
+                if ( (SRAM(r_idx).ptr < (SRAM(r_idx).capacity + SRAM(r_idx).boundCap)) && (sim_t >= ROUTER(r_idx,b_idx).packet(1,6)+ROUTER(r_idx).latency) )
                     SRAM(r_idx).ptr = SRAM(r_idx).ptr + 1;
                     SRAM(r_idx).packet(SRAM(r_idx).ptr,:) = ROUTER(r_idx,b_idx).packet(1,:);    % move packet
                     
@@ -29,6 +31,26 @@ for r_idx = 1:nROUTER
                     
                     SRAM(r_idx).packet(SRAM(r_idx).ptr,6) = sim_t;      % update arrival time
                     update_buffer(r_idx, b_idx);    % update input buffer struct
+                end
+                
+                % exception handler for packet from neighboring SRAM to MAC
+                % directly (do not harm SRAM capacity since it goes to MAC register)
+                if (ROUTER(r_idx,b_idx).packet(1,5) == 4)
+                    mac_idx = PE(r_idx).mac_idx;
+                    PE(r_idx).MAC(mac_idx).packet(2,:)  = ROUTER(r_idx,b_idx).packet(1,:);
+                    
+                    msg = sprintf('[sim_t @ %d] Packet{%d}(%d->%d) moved from [%s] to [%s] in ROUTER(%d)...\n', ...
+                        sim_t, ROUTER(r_idx,b_idx).packet(1,4), ROUTER(r_idx,b_idx).packet(1,1), ROUTER(r_idx,b_idx).packet(1,2), NETWORK.buffer_arr{b_idx}, 'PE', r_idx);
+                    disp(msg);
+                    
+                    PE(r_idx).MAC(mac_idx).packet(2,6)  = sim_t;
+                    update_buffer(r_idx, b_idx);    % update input buffer struct
+                    
+                    PE(r_idx).MAC(mac_idx).operand_cnt  = PE(r_idx).MAC(mac_idx).operand_cnt + 1;
+                    
+                    iRow  = floor((r_idx-1)/NETWORK.num_cols) + 1;
+                    iCol  = mod(r_idx-1, NETWORK.num_cols) + 1;
+                    stallMAC(iRow,iCol)    = 0;
                 end
                       
             elseif (b_idx == 8) % 'M_OUT': move packet to DRAM

@@ -1,4 +1,4 @@
-function [ genPacket, packetID, image_idx ] = packetGen( NN_type, DRAM_type, num_MAC )
+function [ genPacket, packetID, image_idx ] = packetGen( NN_type, DRAM_type )
 % Packet generation for various types of NNs
 
 
@@ -9,10 +9,10 @@ global DRAM_router_node;
 
 global SRAM_cap;    % 0: SRAM capacity is enough to cover whole image
                     % 1: SRAM capacity is not enough
-                        
+
 nRows       = NETWORK.num_rows;
 nCols       = NETWORK.num_cols;
-nCores      = nRows * nCols * num_MAC;
+% nCores      = nRows * nCols * num_MAC;
 
 imgWidth    = CNN.imgWidth;     imgHeight   = CNN.imgHeight;
 p_imgWidth  = CNN.p_imgWidth;   p_imgHeight = CNN.p_imgHeight;
@@ -26,8 +26,9 @@ end
 % packet generation (DRAM packet has format '[src, dst, gen_time, packetID, data_type]')
 if strcmp(DRAM_type, 'DDR3')    
     % ROUTER node connected to each DRAM channel (MUST REPRESENT IT BY A MATRIX AS ACTUAL TOPOLOGY!!!)
-    DRAM_router_node    = [6, 7];       % 2 channels
+%     DRAM_router_node    = [6, 7];       % 2 channels
 %     DRAM_router_node    = [6, 7; 10, 11];     % 4 channels
+    DRAM_router_node    = [1, 2, 3, 4; 5, 6, 7, 8; 9, 10, 11, 12; 13, 14, 15, 16];     % 4 channels
 else
     error('DRAM TYPE NOT RECOGNIZED!');
 end
@@ -52,7 +53,7 @@ if strcmp(NN_type, 'CNN')
                     for temp_row = 1:tempHeight
                         for temp_col = 1:tempWidth
                             dst         = (row_idx - 1)*nCols + col_idx;
-                            DRAM(chan_idx).packet(gen_t,:)  = [DRAM_router_node(chan_idx), dst, gen_t, packetID, 1];
+                            DRAM(chan_idx).packet(gen_t,:)  = [DRAM_router_node(chan_row_idx, chan_col_idx), dst, gen_t, packetID, 1];
                             gen_t       = gen_t + 1;
                             packetID    = packetID + 1;
                         end
@@ -121,13 +122,13 @@ if strcmp(NN_type, 'CNN')
                                     
                                     % cell state
                                     dst         = (row_idx - 1)*nCols + col_idx;
-                                    DRAM(chan_idx).packet(gen_t,:)  = [DRAM_router_node(chan_idx), dst, gen_t, packetID, 2];
+                                    DRAM(chan_idx).packet(gen_t,:)  = [DRAM_router_node(chan_row_idx, chan_col_idx), dst, gen_t, packetID, 2];
                                     gen_t       = gen_t + 1;
                                     packetID    = packetID + 1;
                                     
                                     % offset
                                     dst         = (row_idx - 1)*nCols + col_idx;
-                                    DRAM(chan_idx).packet(gen_t,:)  = [DRAM_router_node(chan_idx), dst, gen_t, packetID, 3];
+                                    DRAM(chan_idx).packet(gen_t,:)  = [DRAM_router_node(chan_row_idx, chan_col_idx), dst, gen_t, packetID, 3];
                                     gen_t       = gen_t + 1;
                                     
                                     

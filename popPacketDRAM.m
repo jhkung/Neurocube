@@ -13,7 +13,7 @@ pop_flag    = 0;
 % packet: [src, dst, gen_time, packetID, data_type]
 % router buffer arr: 'C_IN', 'M_IN', 'N_IN', 'E_IN', 'W_IN', 'S_IN', 'C_OUT', 'M_OUT', 'N_OUT', 'E_OUT', 'W_OUT', 'S_OUT'
 if (~isempty(DRAM(1).packet))
-    estimated_arr_time = DRAM(1).packet(1,3) + +DRAM(1).t_access+DRAM(1).t_interc;
+    estimated_arr_time = DRAM(1).packet(1,3) + DRAM(1).t_access + DRAM(1).t_interc;
     if (sim_t == estimated_arr_time)
         
         for row_idx = 1:M
