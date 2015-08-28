@@ -23,6 +23,7 @@ global NETWORK;
 
 
 DRAM_type           = 'DDR3';
+DRAM_type           = 'HMC_INT';
 DRAM                = DRAM_construct(DRAM_type);
 
 % NETWORK: network struct for information on router network (delay, topology,...)

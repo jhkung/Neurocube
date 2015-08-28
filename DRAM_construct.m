@@ -2,17 +2,39 @@ function [ DRAM ] = DRAM_construct( DRAM_type )
 %% Constructor for DRAM depending on a given architecture
 
 
-DRAM_size = 2^30;       % virtual size of DRAM (1GB) per channel
 
 % can add any DRAM_type by setting up the corresponding access latency
 if strcmp(DRAM_type, 'DDR3')
-    num_channels    = 16;
-    page_size       = 2^10;    % 1KB page (column size)
-    word_size       = 2^2;     % 4B (equivalent to data bus-width)
+    DRAM_size = 2^30;       % virtual size of DRAM (1GB) per channel
+    num_channels    = 2;
+    page_size       = 2^10;     % 1KB page (column size)
+    word_size       = 2^2;      % 4B (equivalent to data bus-width)
     MAX_words       = DRAM_size/word_size;
     num_cols        = page_size/word_size;
-    lat_access      = 20;      % DDR3-1600J: t_CAS (10) + t_RCD (10)
-    interc_delay    = 10;      % interconnection delay
+    lat_access      = 20;       % DDR3-1600J: t_CAS (10) + t_RCD (10)
+    interc_delay    = 1;        % interconnection delay
+elseif strcmp (DRAM_type, 'HMC_INT')
+    
+    num_channels    = 16;
+    DRAM_size       = 2^30*8/num_channels; 
+                                % Total DRAM size of HMC is 8GB,
+                                % Virtual size of DRAM (8GB) per channel
+    
+    page_size       = 2^10;     % 1KB page (column size)
+    word_size       = 2^2;      % 4B (equivalent to data bus-width)
+    MAX_words       = DRAM_size/word_size;
+    num_cols        = page_size/word_size;
+    lat_access      = 22;       % HMC: t_CAS (11) + t_RCD (11)
+    interc_delay    = 1;        % interconnection delay
+elseif strcmp (DRAM_type, 'HMC_EXT')
+    num_channels    = 4;
+    DRAM_size       = 2^30*8/num_channels;
+    page_size       = 2^10;     % 1KB page (column size)
+    word_size       = 2^2;      % 4B (equivalent to data bus-width)
+    MAX_words       = DRAM_size/word_size;
+    num_cols        = page_size/word_size;
+    lat_access      = 22;       % DDR3-1600J: t_CAS (10) + t_RCD (10)
+    interc_delay    = 1;        % interconnection delay
 else    % TODO: add more DRAM specifications (HMC, WideIO, ...)
     error('DRAM TYPE NOT RECOGNIZED!');
 end
